@@ -1,0 +1,84 @@
+package Demo1;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.testng.annotations.Test;
+
+import static org.hamcrest.Matchers.equalTo;
+import static org.testng.Assert.assertEquals;
+
+public class AuthJava {
+
+    String baseUrl = "https://api.openweathermap.org/data/2.5/weather";
+    String validApiKey = "721333ea40d19c6253edb0ddb3965ceb";
+    String invalidApiKey = "invalid_key";
+    String deactivatedApiKey= "109b6f388c76596545653dfb47f1df05";
+
+    @Test
+    public void testValidApiKey() {
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .queryParam("appid", validApiKey)
+                .queryParam("units", "metric")
+                .get(baseUrl);
+
+        response.then().statusCode(200);
+    }
+
+    @Test
+    public void testMissingApiKey() {
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .get(baseUrl);
+
+        response.then().statusCode(401)
+                .body("message", equalTo("Invalid API key. Please see https://openweathermap.org/faq#error401 for more info."));
+    }
+
+    @Test
+    public void testInvalidApiKey() {
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .queryParam("appid", invalidApiKey)
+                .get(baseUrl);
+
+        response.then().statusCode(401)
+                .body("message", equalTo("Invalid API key. Please see https://openweathermap.org/faq#error401 for more info."));
+    }
+
+    @Test
+    public void testExpiredApiKeySimulation() {
+        // OpenWeather doesn't provide token expiration simulation.
+        // This is a placeholder for environments with expiring tokens.
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .queryParam("appid", "expired_token_simulation")
+                .get(baseUrl);
+
+        response.then().statusCode(401);  // Simulating token expiration behavior
+    }
+
+    @Test
+    public void testDeactivatedApiKey() {
+        // Simulate a previously valid but now deactivated key
+        String deactivatedApiKey = "deactivated_key_simulation";
+
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .queryParam("appid", deactivatedApiKey)
+                .get(baseUrl);
+
+        response.then().statusCode(401)
+                .body("message", equalTo("Invalid API key. Please see https	://openweathermap.org/faq#error401 for more info."));
+    }
+
+    @Test
+    public void testMalformedApiKey() {
+        Response response = RestAssured.given()
+                .queryParam("q", "London")
+                .queryParam("appid", "123!@#")
+                .get(baseUrl);
+
+        response.then().statusCode(401);
+    }
+}
