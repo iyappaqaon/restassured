@@ -1,0 +1,128 @@
+package Demo1;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class news {
+
+    private static final String API_KEY = "06bb201ea24f4b8293f8e6e489be734d"; // Replace with your actual NewsAPI key
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = "https://newsapi.org/v2";
+    }
+
+    @Test
+    public void Headlines_US() {
+        Response response = given()
+            .queryParam("q", "US")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/top-headlines");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("totalResults", greaterThan(0))
+            .body("articles", not(empty()))
+            .body("articles[0].title", notNullValue());
+
+        System.out.println("Top Headlines - US:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void 	Headlines_IN() {
+        Response response = given()
+            .queryParam("q", "IN")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/top-headlines");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("articles", not(empty()))
+            .body("articles[0].source.name", notNullValue());
+
+        System.out.println("Top Headlines - IN:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void testTopHeadlines_Tech() {
+        Response response = given()
+            .queryParam("q", "tech")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/top-headlines");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("articles.size()", greaterThan(0))
+            .body("articles[0].url", containsString("http"));
+
+        System.out.println("Top Headlines - Tech:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void Headlines_Sports() {
+        Response response = given()
+            .queryParam("q", "sports")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/top-headlines");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("articles.size()", greaterThan(0))
+            .body("articles[0].publishedAt", containsString("T"));
+
+        System.out.println("Top Headlines - Sports:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void testEverything_Technology() {
+        Response response = given()
+            .queryParam("q", "technology")
+            .queryParam("from", "2025-05-01")
+            .queryParam("sortBy", "publishedAt")
+            .queryParam("language", "en")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/everything");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("articles.size()", greaterThan(0))
+            .body("articles[0].author", anything())
+            .body("articles[0].description", notNullValue());
+
+        System.out.println("Everything - Technology:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void Sources_US_English() {
+        Response response = given()
+            .queryParam("language", "en")
+            .queryParam("country", "us")
+            .queryParam("apiKey", API_KEY)
+        .when()
+            .get("/sources");
+
+        response.then()
+            .statusCode(200)
+            .body("status", equalTo("ok"))
+            .body("sources", not(empty()))
+            .body("sources[0].id", notNullValue())
+            .body("sources[0].name", not(emptyString()));
+
+        System.out.println("Sources - US English:\n" + response.prettyPrint());
+    }
+}
