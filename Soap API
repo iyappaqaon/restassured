@@ -1,0 +1,83 @@
+package Demo1;
+
+import io.restassured.response.Response;
+import org.testng.annotations.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+
+public class soap {
+    @Test
+    public void testNumberToWords() {
+        String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                "  <soap:Body>\n" +
+                "    <NumberToWords xmlns=\"http://www.dataaccess.com/webservicesserver/\">\n" +
+                "      <ubiNum>123</ubiNum>\n" +
+                "    </NumberToWords>\n" +
+                "  </soap:Body>\n" +
+                "</soap:Envelope>";
+
+        Response response = given()
+                .header("Content-Type", "text/xml;charset=UTF-8")
+                .header("SOAPAction", "http://www.dataaccess.com/webservicesserver/NumberToWords")
+                .body(requestBody)
+                .when()
+                .post("https://www.dataaccess.com/webservicesserver/NumberConversion.wso");
+
+        response.then()
+                .statusCode(200)
+                .body(containsString("one hundred  twenty three")); // Optional: update based on actual response
+
+        System.out.println("NumberToWords Response:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void testCalculatorAdd() {
+        String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                "  <soap:Body>\n" +
+                "    <Add xmlns=\"http://tempuri.org/\">\n" +
+                "      <intA>10</intA>\n" +
+                "      <intB>15</intB>\n" +
+                "    </Add>\n" +
+                "  </soap:Body>\n" +
+                "</soap:Envelope>";
+
+        Response response = given()
+                .header("Content-Type", "text/xml;charset=UTF-8")
+                .body(requestBody)
+                .when()
+                .post("http://www.dneonline.com/calculator.asmx");
+
+        response.then()
+                .statusCode(200)
+                .body(containsString("<AddResult>25</AddResult>"));
+
+        System.out.println("Calculator Add Response:\n" + response.prettyPrint());
+    }
+
+    @Test
+    public void testCapitalCity() {
+        String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                "  <soap:Body>\n" +
+                "    <CapitalCity xmlns=\"http://www.oorsprong.org/websamples.countryinfo\">\n" +
+                "      <sCountryISOCode>IN</sCountryISOCode>\n" +
+                "    </CapitalCity>\n" +
+                "  </soap:Body>\n" +
+                "</soap:Envelope>";
+
+        Response response = given()
+                .header("Content-Type", "text/xml;charset=UTF-8")
+                .body(requestBody)
+                .when()
+                .post("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso");
+
+        response.then()
+                .statusCode(200)
+                .body(containsString("New Delhi"));
+
+        System.out.println("Capital City Response:\n" + response.prettyPrint());
+    }
+}
