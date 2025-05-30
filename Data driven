@@ -1,0 +1,58 @@
+package Demo1;
+
+import io.qameta.allure.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.testng.annotations.DataProvider;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import utils.ExcelUtils;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+@Listeners({io.qameta.allure.testng.AllureTestNg.class})
+@Epic("User Management")
+@Feature("Create User API")
+public class ReqresTest {
+	@Test
+    public void dummyTest() {
+        Allure.step("Dummy test step to confirm Allure is working");
+        Allure.addAttachment("Dummy Attachment", "text/plain", "This is a test attachment", "txt");
+        assert true;
+    }
+    @DataProvider(name = "userData")
+    public Object[][] userData() {
+        String path = System.getProperty("user.dir") + "/src/test/resources/testdata.xlsx";
+        Object[][] data = ExcelUtils.getExcelData(path, "Users");
+        return data;
+    }
+
+    @Test(dataProvider = "userData", description = "Create user with different names and jobs")
+    @Severity(SeverityLevel.CRITICAL)
+    @Story("Create User")
+    @Description("Test to validate user creation endpoint with different name-job combinations")
+    public void createUserTest(String name, String job) {
+        RestAssured.baseURI = "https://reqres.in";
+
+        String payload = "{ \"name\": \"" + name + "\", \"job\": \"" + job + "\" }";
+
+        Allure.step("Creating user with name: " + name + " and job: " + job);
+
+        Response response =
+            given()
+                .contentType(ContentType.JSON)
+                .header("x-api-key", "reqres-free-v1")
+                .body(payload)
+            .when()
+                .post("/api/users")
+            .then()
+                .statusCode(201)
+                .body("name", equalTo(name))
+                .body("job", equalTo(job))
+                .extract().response();
+
+        Allure.addAttachment("Response", "application/json", response.asPrettyString());
+    }
+}
