@@ -1,0 +1,132 @@
+package Demo1;
+
+import io.restassured.response.Response;
+import org.testng.annotations.*;
+
+import com.aventstack.extentreports.*;
+import com.aventstack.extentreports.reporter.ExtentSparkReporter;
+
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.containsString;
+
+public class soapReport {
+
+    private static ExtentReports extent;
+    private static ExtentTest test;
+
+    @BeforeClass
+    public void setupExtent() {
+        ExtentSparkReporter sparkReporter = new ExtentSparkReporter("test-output/SoapTestReport.html");
+        extent = new ExtentReports();
+        extent.attachReporter(sparkReporter);
+        extent.setSystemInfo("Tester", "Iyappan");
+    }
+
+
+    @AfterClass
+    public void tearDownExtent() {
+        extent.flush();
+    }
+
+    @Test
+    public void testNumberToWords() {
+        test = extent.createTest("testNumberToWords");
+
+        try {
+            String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                    "  <soap:Body>\n" +
+                    "    <NumberToWords xmlns=\"http://www.dataaccess.com/webservicesserver/\">\n" +
+                    "      <ubiNum>123</ubiNum>\n" +
+                    "    </NumberToWords>\n" +
+                    "  </soap:Body>\n" +
+                    "</soap:Envelope>";
+
+            test.info("Sending SOAP request for NumberToWords");
+
+            Response response = given()
+                    .header("Content-Type", "text/xml;charset=UTF-8")
+                    .header("SOAPAction", "http://www.dataaccess.com/webservicesserver/NumberToWords")
+                    .body(requestBody)
+                    .when()
+                    .post("https://www.dataaccess.com/webservicesserver/NumberConversion.wso");
+
+            response.then()
+                    .statusCode(200)
+                    .body(containsString("one hundred twenty three"));
+
+            test.pass("Test passed. Response:\n" + response.prettyPrint());
+        } catch (AssertionError | Exception e) {
+            test.fail("Test failed with exception: " + e.getMessage());
+            throw e;  
+        }
+    }
+
+    @Test
+    public void testCalculatorAdd() {
+        test = extent.createTest("testCalculatorAdd");
+
+        try {
+            String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                    "  <soap:Body>\n" +
+                    "    <Add xmlns=\"http://tempuri.org/\">\n" +
+                    "      <intA>10</intA>\n" +
+                    "      <intB>15</intB>\n" +
+                    "    </Add>\n" +
+                    "  </soap:Body>\n" +
+                    "</soap:Envelope>";
+
+            test.info("Sending SOAP request for Calculator Add");
+
+            Response response = given()
+                    .header("Content-Type", "text/xml;charset=UTF-8")
+                    .body(requestBody)
+                    .when()
+                    .post("http://www.dneonline.com/calculator.asmx");
+
+            response.then()
+                    .statusCode(200)
+                    .body(containsString("<AddResult>25</AddResult>"));
+
+            test.pass("Test passed. Response:\n" + response.prettyPrint());
+        } catch (AssertionError | Exception e) {
+            test.fail("Test failed with exception: " + e.getMessage());
+            throw e;
+        }
+    }
+
+    @Test
+    public void testCapitalCity() {
+        test = extent.createTest("testCapitalCity");
+
+        try {
+            String requestBody = "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" +
+                    "<soap:Envelope xmlns:soap=\"http://schemas.xmlsoap.org/soap/envelope/\">\n" +
+                    "  <soap:Body>\n" +
+                    "    <CapitalCity xmlns=\"http://www.oorsprong.org/websamples.countryinfo\">\n" +
+                    "      <sCountryISOCode>IN</sCountryISOCode>\n" +
+                    "    </CapitalCity>\n" +
+                    "  </soap:Body>\n" +
+                    "</soap:Envelope>";
+
+            test.info("Sending SOAP request for CapitalCity");
+
+            Response response = given()
+                    .header("Content-Type", "text/xml;charset=UTF-8")
+                    .body(requestBody)
+                    .when()
+                    .post("http://webservices.oorsprong.org/websamples.countryinfo/CountryInfoService.wso");
+
+            response.then()
+                    .statusCode(200)
+                    .body(containsString("New Delhi"));
+
+            test.pass("Test passed. Response:\n" + response.prettyPrint());
+        } catch (AssertionError | Exception e) {
+            test.fail("Test failed with exception: " + e.getMessage());
+            throw e;
+        }
+    }
+}
