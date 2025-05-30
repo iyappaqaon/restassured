@@ -1,0 +1,114 @@
+package Demo1;
+
+import com.aventstack.extentreports.Status;
+import io.qameta.allure.*;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Listeners;
+import org.testng.annotations.Test;
+import reports.ExtentReportManager;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.hamcrest.Matchers.*;
+
+@Listeners(listeners.ExtentListener.class)
+@Epic("Reqres API")
+@Feature("CRUD Operations with HashMap")
+public class reqRes {
+
+    private final String BASE_URL = "https://reqres.in";
+    private final String API_KEY = "reqres-free-v1";
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = BASE_URL;
+    }
+
+    @Test(description = "Create a new user (POST)")
+    @Severity(SeverityLevel.CRITICAL)
+    @Description("Verify that a new user can be created using a HashMap request body")
+    public void createUser() {
+        ExtentReportManager.getTest().log(Status.INFO, "Creating a new user");
+
+        Map<String, Object> requestBody = new HashMap<>();
+        requestBody.put("name", "John");
+        requestBody.put("job", "Engineer");
+
+        RestAssured
+            .given()
+                .header("x-api-key", API_KEY)
+                .contentType(ContentType.JSON)
+                .body(requestBody)
+            .when()
+                .post("/api/users")
+            .then()
+                .statusCode(201)
+                .body("name", equalTo("John"))
+                .body("job", equalTo("Engineer"));
+
+        ExtentReportManager.getTest().pass("User created successfully");
+    }
+
+    @Test(description = "Read an existing user (GET)")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Verify that an existing user can be fetched by ID")
+    public void readUser() {
+        ExtentReportManager.getTest().log(Status.INFO, "Fetching user with ID 2");
+
+        RestAssured
+            .given()
+                .header("x-api-key", API_KEY)
+            .when()
+                .get("/api/users/2")
+            .then()
+                .statusCode(200)
+                .body("data.id", equalTo(2));
+
+        ExtentReportManager.getTest().pass("User fetched successfully");
+    }
+
+    @Test(description = "Update a user (PUT)")
+    @Severity(SeverityLevel.NORMAL)
+    @Description("Verify that an existing user's information can be updated using a HashMap")
+    public void updateUser() {
+        ExtentReportManager.getTest().log(Status.INFO, "Updating user info");
+
+        Map<String, Object> updateData = new HashMap<>();
+        updateData.put("name", "John Updated");
+        updateData.put("job", "Senior Engineer");
+
+        RestAssured
+            .given()
+                .header("x-api-key", API_KEY)
+                .contentType(ContentType.JSON)
+                .body(updateData)
+            .when()
+                .put("/api/users/2")
+            .then()
+                .statusCode(200)
+                .body("name", equalTo("John Updated"))
+                .body("job", equalTo("Senior Engineer"));
+
+        ExtentReportManager.getTest().pass("User updated successfully");
+    }
+
+    @Test(description = "Delete a user (DELETE)")
+    @Severity(SeverityLevel.MINOR)
+    @Description("Verify that a user can be deleted")
+    public void deleteUser() {
+        ExtentReportManager.getTest().log(Status.INFO, "Deleting user");
+
+        RestAssured
+            .given()
+                .header("x-api-key", API_KEY)
+            .when()
+                .delete("/api/users/2")
+            .then()
+                .statusCode(204);
+
+        ExtentReportManager.getTest().pass("User deleted successfully");
+    }
+}
