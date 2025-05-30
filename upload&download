@@ -1,0 +1,129 @@
+package Demo1;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.testng.annotations.Test;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Comparator;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+public class array {
+	
+	
+
+    @Test
+    public void Products() {
+        Response res = given()
+                .baseUri("https://dummyjson.com")
+                .when()
+                .get("/products")
+                .then()
+                .statusCode(200)
+
+                // size()
+                .body("products.size()", greaterThan(0))
+
+                // hasItem
+                .body("products.title", hasItem("Dog Food"))
+
+                //  hasItem
+                .body("products.brand", hasItems("Chanel", "Dior"))
+
+               
+
+                .extract().response();
+
+        // Access by index
+        String firstProduct = res.path("products[0].title");
+        System.out.println("First product: " + firstProduct);
+
+        //  collect
+        List<String> titles = res.path("products.title");
+        System.out.println("Product Titles: " + titles);
+
+        // findAll
+        List<Map<String, Object>> expensiveProducts = res.path("products.findAll { it.price > 1000 }");
+        System.out.println("Expensive Products: " + expensiveProducts.size());
+
+        
+   
+       }
+
+    @Test
+    public void Users() {
+        Response res = given()
+                .baseUri("https://dummyjson.com")
+                .when()
+                .get("/users")
+                .then()
+                .statusCode(200)
+
+                // not(empty)
+                .body("users", not(empty()))
+
+                //  hasItems
+                .body("users.gender", hasItems("male", "female"))
+
+                .extract().response();
+
+        //  size()
+        int userCount = res.path("users.size()");
+        System.out.println("Total users: " + userCount);
+
+              //  any
+        boolean hasMinors = res.path("users.any { it.age < 18 }");
+        System.out.println("Any minors: " + hasMinors);
+
+        // every
+        boolean allHaveEmail = res.path("users.every { it.email != null }");
+        System.out.println("All users have email: " + allHaveEmail);
+    }
+
+    @Test
+    public void TodoArray() {
+        Response res = given()
+                .baseUri("https://dummyjson.com")
+                .when()
+                .get("/todos")
+                .then()
+                .statusCode(200)
+
+                //  hasItem
+                .body("todos.completed", hasItem(true))
+
+                .extract().response();
+
+        // findAll
+        List<Map<String, Object>> completedTodos = res.path("todos.findAll { it.completed == true }");
+        System.out.println("Completed Todos: " + completedTodos.size());
+
+        //  find
+        Map<String, ?> todoById = res.path("todos.find { it.id == 5 }");
+        System.out.println("Todo with ID 5: " + todoById.get("todo"));
+
+        // collect
+        List<String> allTodos = res.path("todos.collect { it.todo }");
+        System.out.println("All Todos: " + allTodos);
+
+        //  sum
+        int totalIds = res.path("todos.collect { it.id }.sum()");
+        System.out.println("Sum of all IDs: " + totalIds);
+
+        // max
+        Map<String, ?> maxIdTodo = res.path("todos.max { it.id }");
+        System.out.println("Todo with max ID: " + maxIdTodo.get("todo"));
+
+        //  min
+        Map<String, ?> minIdTodo = res.path("todos.min { it.id }");
+        System.out.println("Todo with min ID: " + minIdTodo.get("todo"));
+
+   
+        // 🔹 Array Function: every
+        boolean allHaveId = res.path("todos.every { it.id != null }");
+        System.out.println("All todos have ID: " + allHaveId);
+    }
+}
