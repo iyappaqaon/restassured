@@ -1,0 +1,102 @@
+package Demo1;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class DbJson {
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = "http://localhost:3000";
+    }
+
+    @Test
+    public void testGetAllStudents() {
+        when()
+            .get("/students")
+        .then()
+            .statusCode(200)
+            .body("size()", greaterThan(0));
+    }
+
+    @Test
+    public void testGetStudentById() {
+        when()
+            .get("/students/s1")  // Use "id": "s1"
+        .then()
+            .statusCode(200)
+            .body("name", equalTo("Alice Johnson"));
+    }
+
+    @Test
+    public void testCreateNewStudent() {
+        String newStudent = "{\n" +
+            "  \"studentID\": 4,\n" +
+            "  \"name\": \"David Smith\",\n" +
+            "  \"age\": 18,\n" +
+            "  \"grade\": \"A\",\n" +
+            "  \"courses\": [\"English\", \"Science\"],\n" +
+            "  \"id\": \"s4\"\n" +
+            "}";
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(newStudent)
+        .when()
+            .post("/students")
+        .then()
+            .statusCode(201)
+            .body("name", equalTo("David Smith"));
+    }
+
+    @Test
+    public void testUpdateStudent() {
+        String updatedStudent = "{\n" +
+            "  \"studentID\": 2,\n" +
+            "  \"name\": \"Bob Lee\",\n" +
+            "  \"age\": 19,\n" +
+            "  \"grade\": \"A+\",\n" +
+            "  \"courses\": [\"Science\", \"Math\"],\n" +
+            "  \"id\": \"s2\"\n" +
+            "}";
+
+        given()
+            .contentType(ContentType.JSON)
+            .body(updatedStudent)
+        .when()
+            .put("/students/s2")
+        .then()
+            .statusCode(200)
+            .body("grade", equalTo("A+"));
+    }
+
+    @Test
+    public void testDeleteStudent() {
+        when()
+            .delete("/students/s3")
+        .then()
+            .statusCode(200);
+    }
+
+    @Test
+    public void testGetAllTeachers() {
+        when()
+            .get("/teachers")
+        .then()
+            .statusCode(200)
+            .body("size()", greaterThan(0));
+    }
+
+    @Test
+    public void testGetCoursesByTeacher() {
+        when()
+            .get("/courses?teacherID=1")
+        .then()
+            .statusCode(200)
+            .body("[0].courseName", equalTo("Math"));
+    }
+}
