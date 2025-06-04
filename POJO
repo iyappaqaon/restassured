@@ -1,0 +1,118 @@
+package model;
+
+public class User {
+    private String name;
+    private String job;
+
+    public User() {}
+
+    public User(String name, String job) {
+        this.name = name;
+        this.job = job;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getJob() {
+        return job;
+    }
+
+    public void setJob(String job) {
+        this.job = job;
+    }
+}
+
+
+
+
+
+
+package Demo1;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import model.User;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static io.restassured.RestAssured.*;
+import static org.hamcrest.Matchers.*;
+
+public class PojoReqres {
+
+    private String apiKey = "reqres-free-v1";
+    private String userId;
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = "https://reqres.in/api";
+    }
+
+    @Test(priority = 1)
+    public void createUser() {
+        User newUser = new User("Iyappan", "QA engineer");
+
+        Response postResponse = given()
+                .contentType("application/json")
+                .header("x-api-key", apiKey)
+                .body(newUser)
+            .when()
+                .post("/users")
+            .then()
+                .statusCode(201)
+                .extract().response();
+
+        userId = postResponse.jsonPath().getString("id");
+        System.out.println("Status Line: " + postResponse.getStatusLine());
+        System.out.println("Headers: " + postResponse.getHeaders());
+        System.out.println("Body: " + postResponse.prettyPrint());
+        System.out.println("Created User ID: " + userId);
+    }
+
+    @Test(priority = 2)
+    public void updateUser() {
+        User updatedUser = new User("Iyappa", "QA engineer");
+
+        Response putResponse = given()
+                .contentType("application/json")
+                .header("x-api-key", apiKey)
+                .body(updatedUser)
+            .when()
+                .put("/users/" + userId)
+            .then()
+                .statusCode(200)
+                .body("name", equalTo("Iyappa"))
+                .body("job", equalTo("QA engineer"))
+                .extract().response();
+
+        System.out.println("Status Line: " + putResponse.getStatusLine());
+        System.out.println("Headers: " + putResponse.getHeaders());
+        System.out.println("Body: " + putResponse.prettyPrint());
+        }
+
+    @Test(priority = 3)
+    public void patchUser() {
+        User patchData = new User("Iyappa", "Senior QA");
+
+        Response patchResponse = given()
+                .contentType("application/json")
+                .header("x-api-key", apiKey)
+                .body(patchData)
+            .when()
+                .patch("/users/" + userId)
+            .then()
+                .statusCode(200)
+                .extract().response();
+
+        System.out.println("Status Line: " + patchResponse.getStatusLine());
+        System.out.println("Headers: " + patchResponse.getHeaders());
+        System.out.println("Body: " + patchResponse.prettyPrint());
+    
+    }
+}
