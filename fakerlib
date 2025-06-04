@@ -1,0 +1,82 @@
+package Demo1;
+
+import com.github.javafaker.Faker;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.*;
+
+public class FakerLib {
+
+    Faker faker = new Faker();
+    static final String API_KEY = "reqres-free-v1";
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = "https://reqres.in";
+    }
+
+    @Test
+    public void testCreateUser() {
+        String name = faker.name().fullName();
+        String job = faker.job().title();
+
+        given()
+            .header("x-api-key", API_KEY)
+            .contentType(ContentType.JSON)
+            .body("{\"name\": \"" + name + "\", \"job\": \"" + job + "\"}")
+        .when()
+            .post("/api/users")
+        .then()
+            .statusCode(201)
+            .body("name", equalTo(name))
+            .body("job", equalTo(job))
+            .body("id", notNullValue())
+            .body("createdAt", notNullValue());
+    }
+
+    @Test
+    public void testUpdateUser() {
+        String name = faker.name().firstName();
+        String job = faker.job().position();
+
+        given()
+            .header("x-api-key", API_KEY)
+            .contentType(ContentType.JSON)
+            .body("{\"name\": \"" + name + "\", \"job\": \"" + job + "\"}")
+        .when()
+            .put("/api/users/2")
+        .then()
+            .statusCode(200)
+            .body("name", equalTo(name))
+            .body("job", equalTo(job))
+            .body("updatedAt", notNullValue());
+    }
+
+   
+    @Test
+    public void testGetUserList() {
+        given()
+            .header("x-api-key", API_KEY)
+            .queryParam("page", 2)
+        .when()
+            .get("/api/users")
+        .then()
+            .statusCode(200)
+            .body("page", equalTo(2))
+            .body("data", not(empty()));
+    }
+
+    @Test
+    public void testDeleteUser() {
+        given()
+            .header("x-api-key", API_KEY)
+        .when()
+            .delete("/api/users/2")
+        .then()
+            .statusCode(204);
+    }
+}
