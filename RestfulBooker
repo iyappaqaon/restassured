@@ -1,0 +1,110 @@
+package Demo1;
+
+import io.restassured.RestAssured;
+import io.restassured.response.Response;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static io.restassured.RestAssured.given;
+import static org.testng.Assert.*;
+
+public class RestFul {
+
+    private String token;
+    private int bookingId;
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = "https://restful-booker.herokuapp.com";
+    }
+
+    @Test(priority = 1)
+    public void createToken() {
+        Map<String, String> credentials = new HashMap<>();
+        credentials.put("username", "admin");
+        credentials.put("password", "password123");
+
+        Response response = given()
+                .contentType("application/json")
+                .body(credentials)
+                .post("/auth");
+
+        response.then().log().all();  // Log full response
+        token = response.jsonPath().getString("token");
+    }
+
+    @Test(priority = 2)
+    public void createBooking() {
+        Map<String, Object> booking = new HashMap<>();
+        booking.put("firstname", "John");
+        booking.put("lastname", "Doe");
+        booking.put("totalprice", 150);
+        booking.put("depositpaid", true);
+
+        Map<String, String> dates = new HashMap<>();
+        dates.put("checkin", "2025-06-01");
+        dates.put("checkout", "2025-06-10");
+
+        booking.put("bookingdates", dates);
+        booking.put("additionalneeds", "Breakfast");
+
+        Response response = given()
+                .contentType("application/json")
+                .body(booking)
+                .post("/booking");
+
+        response.then().log().all();  // Log full response
+        bookingId = response.jsonPath().getInt("bookingid");
+        assertTrue(bookingId > 0, "Booking ID is invalid");
+    }
+
+    @Test(priority = 3)
+    public void getBooking() {
+        Response response = given()
+                .get("/booking/" + bookingId);
+
+        response.then().log().all();  // Log full response
+        assertEquals(response.jsonPath().getString("firstname"), "John");
+    }
+
+    @Test(priority = 4)
+    public void updateBooking() {
+        Map<String, Object> updatedBooking = new HashMap<>();
+        updatedBooking.put("firstname", "Jane");
+        updatedBooking.put("lastname", "Smith");
+        updatedBooking.put("totalprice", 200);
+        updatedBooking.put("depositpaid", false);
+
+        Map<String, String> dates = new HashMap<>();
+        dates.put("checkin", "2025-07-01");
+        dates.put("checkout", "2025-07-05");
+        updatedBooking.put("bookingdates", dates);
+        updatedBooking.put("additionalneeds", "Dinner");
+
+        Response response = given()
+                .contentType("application/json")
+                .cookie("token", token)
+                .body(updatedBooking)
+                .put("/booking/" + bookingId);
+
+        response.then().log().all();  // Log full response
+        assertEquals(response.jsonPath().getString("firstname"), "Jane");
+    }
+
+    @Test(priority = 5)
+    public void deleteBooking() {
+        Response response = given()
+                .cookie("token", token)
+                .delete("/booking/" + bookingId);
+
+        response.then().log().all();  
+        given()
+                .get("/booking/" + bookingId)
+                .then()
+                .log().all()
+                .statusCode(404);
+    }
+}
