@@ -1,0 +1,136 @@
+package Demo1;
+
+import com.github.javafaker.Faker;
+import io.restassured.RestAssured;
+import io.restassured.http.ContentType;
+import io.restassured.response.Response;
+import org.testng.annotations.*;
+
+import static org.hamcrest.Matchers.*;
+
+public class GoRest {
+
+    private static final String BASE_URL = "https://gorest.co.in/public/v2";
+    private static final String TOKEN = "ddf39f7cf6a415c83b1a248d9ee93cc04467ae86c44f8070a66d62293698ba63"; // Replace with your GoRest token
+    private int userId;
+    private Faker faker;
+    private String uniqueEmail;
+    private String userName;
+    private String userGender;
+    private String userStatus;
+
+    @BeforeClass
+    public void setup() {
+        RestAssured.baseURI = BASE_URL;
+        faker = new Faker();
+    }
+
+    @Test(priority = 1)
+    public void testCreate() {
+        userName = faker.name().fullName();
+        uniqueEmail = faker.internet().emailAddress();
+        userGender = faker.options().option("male", "female");
+        userStatus = faker.options().option("active", "inactive");
+
+        String payload = "{"
+                + "\"name\": \"" + userName + "\","
+                + "\"email\": \"" + uniqueEmail + "\","
+                + "\"gender\": \"" + userGender + "\","
+                + "\"status\": \"" + userStatus + "\""
+                + "}";
+
+        Response response = RestAssured.given()
+                .header("Authorization", "Bearer " + TOKEN)
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .post("/users");
+
+        response.then()
+                .statusCode(201)
+                .body("name", equalTo(userName))
+                .body("email", equalTo(uniqueEmail))
+                .body("gender", equalTo(userGender))
+                .body("status", equalTo(userStatus));
+
+        userId = response.jsonPath().getInt("id");
+
+        System.out.println("Create User Response:");
+        response.prettyPrint();
+        System.out.println("Created User ID: " + userId);
+    }
+
+    @Test(priority = 2, dependsOnMethods = "testCreate")
+    public void testGet() {
+        Response response = RestAssured.given()
+                .header("Authorization", "Bearer " + TOKEN)
+                .get("/users/" + userId);
+
+        response.then()
+                .statusCode(200)
+                .body("id", equalTo(userId))
+                .body("email", equalTo(uniqueEmail));
+
+        System.out.println("Get User Response:");
+        response.prettyPrint();
+    }
+
+    @Test(priority = 3, dependsOnMethods = "testGet")
+    public void testUpdate() {
+        String updatedName = faker.name().fullName();
+        String updatedEmail = faker.internet().emailAddress();
+        String updatedStatus = faker.options().option("active", "inactive");
+
+        String payload = "{"
+                + "\"name\": \"" + updatedName + "\","
+                + "\"email\": \"" + updatedEmail + "\","
+                + "\"gender\": \"" + userGender + "\","
+                + "\"status\": \"" + updatedStatus + "\""
+                + "}";
+
+        Response response = RestAssured.given()
+                .header("Authorization", "Bearer " + TOKEN)
+                .contentType(ContentType.JSON)
+                .body(payload)
+                .put("/users/" + userId);
+
+        response.then()
+                .statusCode(200)
+                .body("name", equalTo(updatedName))
+                .body("email", equalTo(updatedEmail))
+                .body("status", equalTo(updatedStatus));
+
+        // Update stored values for next tests
+        userName = updatedName;
+        uniqueEmail = updatedEmail;
+        userStatus = updatedStatus;
+
+        System.out.println("Update User Response:");
+        response.prettyPrint();
+    }
+
+    @Test(priority = 4, dependsOnMethods = "testUpdate")
+    public void testDelete() {
+        Response response = RestAssured.given()
+                .header("Authorization", "Bearer " + TOKEN)
+                .delete("/users/" + userId);
+
+        response.then()
+                .statusCode(204);
+
+        
+        response.prettyPrint();
+    }
+
+    @Test(priority = 5, dependsOnMethods = "testDelete")
+    public void Delete() {
+        Response response = RestAssured.given()
+                .header("Authorization", "Bearer " + TOKEN)
+                .get("/users/" + userId);
+
+        response.then()
+                .statusCode(404);
+
+        System.out.println("Get Deleted User Response (Expected 404):");
+        response.prettyPrint();
+    }
+}
